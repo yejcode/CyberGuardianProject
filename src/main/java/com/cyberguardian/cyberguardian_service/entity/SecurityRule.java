@@ -26,7 +26,7 @@ public class SecurityRule {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String pattern; // regex à tester sur la requête
 
     @Enumerated(EnumType.STRING)

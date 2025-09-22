@@ -22,4 +22,8 @@ public class CreateSecurityRuleRequest {
 
     @NotNull
     private Severity severity;
+
+    @NotNull
+    private Boolean enabled;
+
 }

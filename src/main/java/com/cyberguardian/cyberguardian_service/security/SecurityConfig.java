@@ -30,12 +30,9 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/ws-alerts/**").permitAll()
                         .requestMatchers("/api/rules/**").hasRole("ADMIN")
-                        .requestMatchers("/api/rules/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(requestInterceptorFilter, JwtAuthFilter.class); // Après auth
-
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
