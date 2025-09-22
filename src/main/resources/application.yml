@@ -1,0 +1,21 @@
+server:
+  port: 8090
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cyber
+    username: cyber
+    password: cyber
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+security:
+  jwt:
+    secret: dcbc50a2fef0e9aee01c536dac7be10554963e993e61d4265fd303259f6d060c
+    expiration-minutes: 120
