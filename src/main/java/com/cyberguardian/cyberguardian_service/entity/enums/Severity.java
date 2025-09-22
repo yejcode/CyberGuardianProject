@@ -4,5 +4,9 @@ public enum Severity {
     LOW,
     MEDIUM,
     HIGH,
-    CRITICAL
+    CRITICAL;
+
+    public boolean isCriticalOrHigh() {
+        return this == HIGH || this == CRITICAL;
+    }
 }

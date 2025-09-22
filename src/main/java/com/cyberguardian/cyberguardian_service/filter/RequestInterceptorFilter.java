@@ -1,7 +1,10 @@
 package com.cyberguardian.cyberguardian_service.filter;
 
+import com.cyberguardian.cyberguardian_service.dto.alert.AlertMessage;
 import com.cyberguardian.cyberguardian_service.engine.RequestData;
 import com.cyberguardian.cyberguardian_service.engine.RuleAnalysisResult;
+import com.cyberguardian.cyberguardian_service.repository.SecurityRuleRepository;
+import com.cyberguardian.cyberguardian_service.service.AlertingService;
 import com.cyberguardian.cyberguardian_service.service.RequestLogService;
 import com.cyberguardian.cyberguardian_service.service.RuleEngineService;
 import jakarta.servlet.FilterChain;
@@ -9,6 +12,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.apache.commons.codec.digest.DigestUtils;
 
@@ -23,12 +27,16 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class RequestInterceptorFilter extends OncePerRequestFilter {
 
     private final RuleEngineService ruleEngine;
     private final RequestLogService logService;
+    private final AlertingService alertingService;
+    private final SecurityRuleRepository ruleRepo;
 
     @Override
+
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain)
@@ -62,11 +70,35 @@ public class RequestInterceptorFilter extends OncePerRequestFilter {
         // Analyse par le moteur de règles
         RuleAnalysisResult result = ruleEngine.analyzeRequest(data);
 
+        log.info("=== REQUEST ANALYSIS ===");
+        log.info("Endpoint: {}", data.endpoint());
+        log.info("Method: {}", data.method());
+        log.info("Is Malicious: {}", result.malicious());
+        if (result.malicious()) {
+            log.info("Rule Matched: {}", result.ruleMatched());
+            log.info("Attack Type: {}", result.attackType());
+            log.info("Body Hash: {}", data.bodyHash());
+        }
+        log.info("========================");
+
         // Loguer la requête
         logService.logRequest(data, result, System.currentTimeMillis() - start);
 
         // Bloquer si malicieuse
         if (result.malicious()) {
+            // ✅ Vérifier sévérité de la règle
+            ruleRepo.findByName(result.ruleMatched()).ifPresent(rule -> {
+                if (rule.getSeverity().isCriticalOrHigh()) { // à implémenter dans enum Severity
+                    AlertMessage msg = new AlertMessage(
+                            "Blocked",
+                            result.ruleMatched(),
+                            result.attackType().name(),
+                            data.endpoint(),
+                            data.sourceIp()
+                    );
+                    alertingService.sendCriticalAlert(msg);
+                }
+            });
             // ✅ Réponse JSON claire
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json");
@@ -86,10 +118,9 @@ public class RequestInterceptorFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-        return path.startsWith("/api/auth")
-                || path.startsWith("/api/users")
-                || path.startsWith("/api/rules")
-                || path.startsWith("/swagger-ui")
-                || path.startsWith("/v3/api-docs");
+        return  path.startsWith("/swagger-ui")
+                || path.startsWith("/api/auth")
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/ws-alerts");
     }
 }

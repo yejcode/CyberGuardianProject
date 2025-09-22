@@ -2,6 +2,8 @@ package com.cyberguardian.cyberguardian_service.repository;
 
 import com.cyberguardian.cyberguardian_service.entity.RequestLog;
 import com.cyberguardian.cyberguardian_service.entity.enums.AttackType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -12,18 +14,16 @@ import java.util.List;
 public interface RequestLogRepository extends JpaRepository<RequestLog, Long> {
     List<RequestLog> findTop100ByOrderByIdDesc();
 
-    List<RequestLog> findTop100ByIsMaliciousTrueOrderByIdDesc();
+    Page<RequestLog> findAll(Pageable pageable);
 
-    List<RequestLog> findTop100ByBlockedTrueOrderByIdDesc();
+    Page<RequestLog> findByIsMaliciousTrue(Pageable pageable);
 
-    List<RequestLog> findTop100ByAttackTypeOrderByIdDesc(AttackType attackType);
+    Page<RequestLog> findByBlockedTrue(Pageable pageable);
+
+    Page<RequestLog> findByAttackType(AttackType attackType, Pageable pageable);
 
     @Query("SELECT r.attackType, COUNT(r) FROM RequestLog r GROUP BY r.attackType")
-    List<Object[]> countByAttackType();
+    java.util.List<Object[]> countByAttackType();
 
-    @Query("SELECT COUNT(r) FROM RequestLog r WHERE r.isMalicious = true")
-    long countMalicious();
-
-    @Query("SELECT COUNT(r) FROM RequestLog r")
-    long countAll();
+    long countByIsMaliciousTrue();
 }
