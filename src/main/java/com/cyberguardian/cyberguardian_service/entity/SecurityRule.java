@@ -39,4 +39,9 @@ public class SecurityRule {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    @Transient
+    public boolean isEnabled() {
+        return this.enabled;
+    }
 }
